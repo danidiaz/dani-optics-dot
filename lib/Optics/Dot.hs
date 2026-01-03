@@ -10,7 +10,7 @@ import GHC.Records
 import Optics.Core
 
 instance
-  ( RecordDotOptics name u v a b,
+  ( RecordDotOptics name a b v u,
     JoinKinds k A_Lens m,
     AppendIndices is NoIx ks
   ) =>
@@ -18,8 +18,13 @@ instance
   where
   getField o = o % dotOptic @name
 
-class RecordDotOptics name u v a b | name u -> v a b, name v -> u a b where
+class RecordDotOptics name a b v u | name u -> v a b, name v -> u a b where
   dotOptic :: Lens u v a b
+
+newtype GenericDotOptics u = GenericDotOptics u
+
+instance  (GField name u v a b) => RecordDotOptics name a b v (GenericDotOptics u) where
+  dotOptic = coerceS (gfield @name)
 
 the :: Iso a b a b
 the = Optics.Core.equality

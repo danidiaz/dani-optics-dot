@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE DerivingVia #-}
 
 -- https://stackoverflow.com/questions/53009549/haskell-derivingvia-on-multi-param-type-classes-with-fun-deps
 module Main (main) where
@@ -16,9 +17,10 @@ data Whole a = Whole
     part :: Part a
   }
   deriving stock (Generic, Show)
+  deriving (RecordDotOptics name a b (Whole p) (Whole q)) via (GenericDotOptics (Whole q))
 
-instance (GField name (Whole p) (Whole q) a b) => RecordDotOptics name (Whole p) (Whole q) a b where
-  dotOptic = gfield @name
+-- instance (GField name (Whole p) (Whole q) a b) => RecordDotOptics name  a b (Whole q) (Whole p) where
+--   dotOptic = gfield @name
 
 data Part a = Part
   { part1 :: Bool,
@@ -26,7 +28,7 @@ data Part a = Part
   }
   deriving stock (Generic, Show)
 
-instance (GField name (Part p) (Part q) a b) => RecordDotOptics name (Part p) (Part q) a b where
+instance (GField name (Part p) (Part q) a b) => RecordDotOptics name a b (Part q) (Part p) where
   dotOptic = gfield @name
 
 data Subpart a = Subpart
@@ -36,7 +38,7 @@ data Subpart a = Subpart
   }
   deriving stock (Generic, Show)
 
-instance (GField name (Subpart p) (Subpart q) a b) => RecordDotOptics name (Subpart p) (Subpart q) a b where
+instance (GField name (Subpart p) (Subpart q) a b) => RecordDotOptics name a b (Subpart q) (Subpart p)  where
   dotOptic = gfield @name
 
 data YetAnotherSubpart = YetAnotherSubpart
@@ -50,7 +52,7 @@ data YetAnotherSubpart = YetAnotherSubpart
 -- updates are not supported here.
 instance
   (HasField name YetAnotherSubpart x, SetField name YetAnotherSubpart x) =>
-  RecordDotOptics name YetAnotherSubpart YetAnotherSubpart x x
+  RecordDotOptics name x x YetAnotherSubpart YetAnotherSubpart
   where
   dotOptic = Optics.Core.lens (getField @name) (flip (setField @name))
 
