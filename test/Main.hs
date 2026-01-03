@@ -28,8 +28,7 @@ data Part z = Part
     subpart :: Subpart z
   }
   deriving stock (Generic, Show)
-
-deriving via (GenericDotOptics (Part z)) instance GField name (Part z) (Part p) a b => RecordDotOptics name (Part z) (Part p) a b (Part z)
+  deriving (RecordDotOptics name (Part z) (Part p) a b)  via (GenericDotOptics (Part z)) 
 
 -- instance (GField name (Part p) (Part q) a b) => RecordDotOptics name (Part p) (Part q) a b (Part p) where
 --   dotOptic = gfield @name

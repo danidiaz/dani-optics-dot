@@ -3,7 +3,11 @@
 {-# LANGUAGE RequiredTypeArguments #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Optics.Dot where
+module Optics.Dot (HasField (..),
+       RecordDotOptics (..),
+       GenericDotOptics (..),
+       the,
+ ) where
 
 import Data.Kind
 import GHC.Records
@@ -19,13 +23,15 @@ instance
   where
   getField o = o % dotOptic @name @u @v @a @b @u
 
+-- type role RecordDotOptics nominal nominal nominal nominal nominal nominal
 class RecordDotOptics name s t a b ß | name s -> t a b, name t -> s a b where
 -- class RecordDotOptics name s t a b ß | name s -> t a b, name t -> s a b where
-  dotOptic :: Lens s t a b
+  dotOptic :: Lens ß t a b
 
+type GenericDotOptics :: Type -> Type
 newtype GenericDotOptics r = GenericDotOptics r
 
-instance  (GField name s t a b) => RecordDotOptics name s t a b (GenericDotOptics ß) where
+instance  (Coercible s ß, GField name s t a b) => RecordDotOptics name s t a b (GenericDotOptics ß) where
   dotOptic = coerceS (gfield @name)
 
 the :: Iso a b a b
