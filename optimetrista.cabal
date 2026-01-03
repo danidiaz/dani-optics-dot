@@ -34,4 +34,5 @@ test-suite optimetrista-test
     main-is:          Main.hs
     build-depends:
         base ^>=4.21.0.0,
-        optimetrista
+        optimetrista,
+        optics-core
