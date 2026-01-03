@@ -18,11 +18,11 @@ instance
   where
   getField o = o % dotOptic @name
 
-the :: Iso a b a b
-the = Optics.Core.equality
-
 class RecordDotOptics name u v a b | name u -> v a b, name v -> u a b where
   dotOptic :: Lens u v a b
+
+the :: Iso a b a b
+the = Optics.Core.equality
 
 -- | This should be in base in the future.
 type SetField :: forall {k}. k -> Type -> Type -> Constraint
