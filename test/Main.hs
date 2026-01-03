@@ -9,7 +9,7 @@ module Main (main) where
 import GHC.Generics
 import GHC.Records
 import Optics.Core
-import Optics.Lens.Dot
+import Optics.Dot
 
 data Whole a = Whole
   { whole1 :: Int,

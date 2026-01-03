@@ -17,7 +17,7 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Optics.Lens.Dot
+    exposed-modules:  Optics.Dot
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.21.0.0, optics-core

@@ -3,7 +3,7 @@
 {-# LANGUAGE RequiredTypeArguments #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Optics.Lens.Dot where
+module Optics.Dot where
 
 import Data.Kind
 import GHC.Records
