@@ -17,10 +17,10 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  MyLib
+    exposed-modules:  Optics.Lens.Dot
     -- other-modules:
     -- other-extensions:
-    build-depends:    base ^>=4.21.0.0
+    build-depends:    base ^>=4.21.0.0, optics-core
     hs-source-dirs:   lib
     default-language: GHC2024
 
