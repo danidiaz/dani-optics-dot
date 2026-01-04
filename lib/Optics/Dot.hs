@@ -12,35 +12,35 @@ import GHC.TypeLits
 import Optics.Core
 
 instance
-  ( HasOpticsMethod u,
-    RecordDotOptics (Method u) name u v a b,
+  ( HasDotOptics u,
+    DotOptic (DotOpticsMethod u) name u v a b,
     JoinKinds k A_Lens m,
     AppendIndices is NoIx ks
   ) =>
   HasField name (Optic k is s t u v) (Optic m ks s t a b)
   where
-  getField o = o % (dotOptic @(Method u) @name @u @v @a @b)
+  getField o = o % (dotOptic @(DotOpticsMethod u) @name @u @v @a @b)
 
-class HasOpticsMethod s where
-  type Method s :: Type
+class HasDotOptics s where
+  type DotOpticsMethod s :: Type
 
 -- |
 -- The @name v -> u a b w@ fundep could be added but doesn't seem to be necessary.
 -- Could it improve inference?
-type RecordDotOptics :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
-class RecordDotOptics method name u v a b | name u -> a b where
+type DotOptic :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
+class DotOptic method name u v a b | name u -> a b where
   dotOptic :: Lens u v a b
 
 data GenericsDotOpticsMethod
 
 newtype GenericsDotOptics s = GenericsDotOptics s
 
-instance HasOpticsMethod (GenericsDotOptics s) where
-  type Method (GenericsDotOptics s) = GenericsDotOpticsMethod
+instance HasDotOptics (GenericsDotOptics s) where
+  type DotOpticsMethod (GenericsDotOptics s) = GenericsDotOpticsMethod
 
 instance
   (GField name s t a b) =>
-  RecordDotOptics GenericsDotOpticsMethod name s t a b
+  DotOptic GenericsDotOpticsMethod name s t a b
   where
   dotOptic = gfield @name
 
@@ -48,8 +48,8 @@ data FieldDotOpticsMethod
 
 newtype FieldDotOptics s = FieldDotOptics s
 
-instance HasOpticsMethod (FieldDotOptics s) where
-  type Method (FieldDotOptics s) = FieldDotOpticsMethod
+instance HasDotOptics (FieldDotOptics s) where
+  type DotOpticsMethod (FieldDotOptics s) = FieldDotOpticsMethod
 
 instance
   ( HasField name s a,
@@ -57,7 +57,7 @@ instance
     s ~ t,
     a ~ b
   ) =>
-  RecordDotOptics FieldDotOpticsMethod name s t a b
+  DotOptic FieldDotOpticsMethod name s t a b
   where
   dotOptic = Optics.Core.lens (getField @name) (flip (setField @name))
 
