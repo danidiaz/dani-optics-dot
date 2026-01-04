@@ -5,14 +5,71 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DataKinds #-}
 
+-- | An orphan 'HasField' instance (along with some supporting machinery) for
+-- the 'Optics.Core.Optic' datatype, that lets you use dot-access syntax on an
+-- 'Optic', resulting in a new 'Optic' that \"zooms in\" further into some
+-- field.
+-- >>> :{
+-- data Whole a = Whole
+--   { whole1 :: Int,
+--     part :: Part a
+--   }
+--   deriving stock (Generic, Show)
+--   deriving (DotOptics) via GenericDotOptics (Whole a)
+-- -- 
+-- data Part a = Part
+--   { part1 :: Bool,
+--     subpart :: Subpart a
+--   }
+--   deriving stock (Generic, Show)
+--   deriving (DotOptics) via GenericDotOptics (Part a)
+-- --
+-- data Subpart a = Subpart
+--   { wee :: String,
+--     foo :: a,
+--     yet :: YetAnotherSubpart
+--   }
+--   deriving stock (Generic, Show)
+--   deriving (DotOptics) via GenericDotOptics (Subpart a)
+-- --
+-- data YetAnotherSubpart = YetAnotherSubpart
+--   { ooo :: String,
+--     uuu :: Int
+--   }
+--   deriving (Show)
+--   deriving (DotOptics) via FieldDotOptics YetAnotherSubpart
+-- --
+-- instance SetField "ooo" YetAnotherSubpart String where
+--   setField ooo r = r {ooo}
+-- --
+-- whole :: Whole Int
+-- whole = Whole 0 (Part True (Subpart "wee" 7 (YetAnotherSubpart "oldval" 3)))
+-- --
+-- typChanging1 :: Whole Bool
+-- typChanging1 = whole & the.part .~ Part True (Subpart "wee" False (YetAnotherSubpart "oldval" 3))
+-- --
+-- typChanging2 :: Whole Bool
+-- typChanging2 = whole & the.part.subpart .~ Subpart "wee" False (YetAnotherSubpart "oldval" 3)
+-- --
+-- typeChanging3 :: Whole String
+-- typeChanging3 = whole & the.part.subpart .~ Subpart "wee" "stuff" (YetAnotherSubpart "oldval" 3)
+-- -- 
+-- nonTypChanging1 :: Whole Int
+-- nonTypChanging1 = whole & the.part.subpart.yet.ooo .~ "newval"
+-- --
+-- normalDotAccess :: String
+-- normalDotAccess = whole.part.subpart.yet.ooo
+-- :}
+-- 
 module Optics.Dot
-  ( DotOptics (..),
+  ( 
+    the,
+    DotOptics (..),
     HasDotOptic (..),
     GenericDotOptics (..),
     GenericDotOpticsMethod,
     FieldDotOptics (..),
     FieldDotOpticsMethod,
-    the,
     -- * Things that will eventually be in base
     SetField (..),
   )
@@ -34,6 +91,9 @@ instance
   getField o = o % (dotOptic @(DotOpticsMethod u) @name @u @v @a @b)
 
 -- | Helper typeclass, used only to specify the method for deriving dot optics.
+-- Usually derived with @DerivingVia@.
+--
+-- See 'GenericDotOptics' and 'FieldDotOptics'.
 class DotOptics s where
   type DotOpticsMethod s :: Type
 
@@ -47,7 +107,7 @@ class HasDotOptic method name u v a b | name u -> a b where
 
 data GenericDotOpticsMethod
 
--- | Used for deriving 'DotOptics' using DerivingVia. The wrapped type is not used for anything.
+-- | For deriving 'DotOptics' using DerivingVia. The wrapped type is not used for anything.
 newtype GenericDotOptics s = GenericDotOptics s
 
 instance DotOptics (GenericDotOptics s) where
@@ -62,7 +122,7 @@ instance
 
 data FieldDotOpticsMethod
 
--- | Used for deriving 'DotOptics' using DerivingVia. The wrapped type is not used for anything.
+-- | For deriving 'DotOptics' using DerivingVia. The wrapped type is not used for anything.
 newtype FieldDotOptics s = FieldDotOptics s
 
 instance DotOptics (FieldDotOptics s) where
@@ -80,7 +140,7 @@ instance
   where
   dotOptic = Optics.Core.lens (getField @name) (flip (setField @name))
 
--- | Identity 'Iso'. Used as a starting point for dot access.
+-- | Identity 'Iso'. Used as a starting point for dot access. It's a renamed "Optics.Core.equality".
 the :: Iso s t s t
 the = Optics.Core.equality
 
@@ -89,3 +149,15 @@ type SetField :: forall {k}. k -> Type -> Type -> Constraint
 class SetField x r a | x r -> a where
   -- | Selector function to extract the field from the record.
   setField :: a -> r -> r
+
+-- $setup
+-- >>> :set -XDerivingVia
+-- >>> :set -XDuplicateRecordFields
+-- >>> :set -XOverloadedRecordDot
+-- >>> :set -XTypeFamilies
+-- >>> :set -XUndecidableInstances
+-- >>> :set -XNoFieldSelectors
+-- >>> :set -XDataKinds
+-- >>> import GHC.Generics
+-- >>> import Optics.Core
+-- >>> import Optics.Dot
