@@ -18,6 +18,8 @@ instance
   where
   getField o = o % dotOptic @name
 
+-- | 
+-- The @name v -> u a b w@ fundep doesn't seem to be necessary.
 class RecordDotOptics name u v a b | name u -> v a b, name v -> u a b where
   dotOptic :: Lens u v a b
 
