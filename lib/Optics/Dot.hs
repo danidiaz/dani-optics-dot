@@ -13,7 +13,7 @@ module Optics.Dot
     FieldDotOptics (..),
     FieldDotOpticsMethod,
     the,
-    --
+    -- * Things that will eventually be in base
     SetField (..),
   )
 where
@@ -39,7 +39,7 @@ class DotOptics s where
 
 -- | Produce an optic according to the given method.
 --
--- The @name v -> u a b w@ fundep could be added but doesn't seem to be necessary.
+-- The @name v -> u a b@ fundep could be added but doesn't seem to be necessary.
 -- Could it improve type inference?
 type HasDotOptic :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
 class HasDotOptic method name u v a b | name u -> a b where
