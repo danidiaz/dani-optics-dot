@@ -19,13 +19,7 @@ data Whole a = Whole
   deriving stock (Generic, Show)
 
 instance HasOpticsMethod (Whole s) where
-  type Method (Whole s) = (Whole s)
-
-instance
-  (GField name (Whole s) (Whole t) a b) =>
-  RecordDotOptics (Whole s) name (Whole s) (Whole t) a b
-  where
-  dotOptic = gfield @name
+  type Method (Whole s) = GenericsDotOptics
 
 data Part a = Part
   { part1 :: Bool,
@@ -33,14 +27,8 @@ data Part a = Part
   }
   deriving stock (Generic, Show)
 
-instance
-  (GField name (Part s) (Part t) a b) =>
-  RecordDotOptics (Part s) name (Part s) (Part t) a b
-  where
-  dotOptic = gfield @name
-
 instance HasOpticsMethod (Part s) where
-  type Method (Part s) = (Part s)
+  type Method (Part s) = GenericsDotOptics
 
 data Subpart a = Subpart
   { wee :: String,
@@ -50,13 +38,7 @@ data Subpart a = Subpart
   deriving stock (Generic, Show)
 
 instance HasOpticsMethod (Subpart s) where
-  type Method (Subpart s) = (Subpart s)
-
-instance
-  (GField name (Subpart s) (Subpart t) a b) =>
-  RecordDotOptics (Subpart s) name (Subpart s) (Subpart t) a b
-  where
-  dotOptic = gfield @name
+  type Method (Subpart s) = GenericsDotOptics
 
 data YetAnotherSubpart = YetAnotherSubpart
   { ooo :: String,
