@@ -17,14 +17,14 @@ data Whole a = Whole
     part :: Part a
   }
   deriving stock (Generic, Show)
-  deriving (DotOptics) via GenericLenses (Whole a)
+  deriving (DotOptics) via GenericFields (Whole a)
 
 data Part a = Part
   { part1 :: Bool,
     subpart :: Subpart a
   }
   deriving stock (Generic, Show)
-  deriving (DotOptics) via GenericLenses (Part a)
+  deriving (DotOptics) via GenericFields (Part a)
 
 data Subpart a = Subpart
   { wee :: String,
@@ -32,14 +32,14 @@ data Subpart a = Subpart
     yet :: YetAnotherSubpart
   }
   deriving stock (Generic, Show)
-  deriving (DotOptics) via GenericLenses (Subpart a)
+  deriving (DotOptics) via GenericFields (Subpart a)
 
 data YetAnotherSubpart = YetAnotherSubpart
   { ooo :: String,
     uuu :: Int
   }
   deriving (Show)
-  deriving (DotOptics) via FieldLenses YetAnotherSubpart
+  deriving (DotOptics) via Fields YetAnotherSubpart
 
 -- | 'YetAnotherSubpart' doesn't use the 'GField' machinery for
 -- 'RecordDotOptics'. Instead, it uses 'HasField'/'SetField'. Field-changing
@@ -71,7 +71,7 @@ data Animal
   | Cat {name :: String, purrs :: Bool}
   | Octopus {tentacles :: Int}
   deriving (Show, Generic)
-  deriving (DotOptics) via GenericPrisms Animal
+  deriving (DotOptics) via GenericConstructors  Animal
 
 animal = Dog {name = "Fido", age = 5}
 
