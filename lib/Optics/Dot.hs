@@ -140,12 +140,11 @@ class DotOptics s where
 type HasDotOptic :: Type -> Symbol -> Symbol -> Type -> Type -> Type -> Type -> Constraint
 class
   HasDotOptic method name dotName u v a b
-    | -- Usually the name used with dot notation doesn't change, except for constructors.
-      name u -> dotName,
+    | 
       -- Necessary to satisfy the 'HasField' instance.
       dotName u -> name,
-      name u -> v a b,
-      name v -> u a b
+      dotName u -> v a b,
+      dotName v -> u a b
   where
   type DotOpticKind method dotName u :: OpticKind
   dotOptic :: Optic (DotOpticKind method dotName u) NoIx u v a b
@@ -264,15 +263,15 @@ instance DotOptics (GenericConstructorsAndAffineFields s) where
 -- | Produce an optic using the optics' package own generic machinery.
 -- Delegates to GConstructor or GAffineField depending on whether dotName starts with '_'.
 instance
-  ( 
-    HasConstructorOrAffineFieldOptic nameAnalysis s t a b,
-    '(name, dotNameForWhat) ~ InspectDotName dotName
+  ( nameAnalysis ~ InspectDotName dotName,
+    '(name, dotNameForWhat) ~ nameAnalysis,
+    HasConstructorOrAffineFieldOptic nameAnalysis s t a b
   ) =>
   HasDotOptic GenericConstructorsAndAffineFieldsMethod name dotName s t a b
   where
   type DotOpticKind GenericConstructorsAndAffineFieldsMethod dotName s =
     DotOpticKindHelper (InspectDotName dotName) s
-  dotOptic = dotOpticHelper @(InspectDotName dotName) @name @dotName @s @t @a @b
+  dotOptic = dotOpticHelper @(InspectDotName dotName)
 
 -- | Identity 'Iso'. Used as a starting point for dot access. A renamed 'Optics.Core.equality'.
 the :: Iso s t s t
