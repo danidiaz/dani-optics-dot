@@ -164,7 +164,8 @@ class
   where
   dotOptic :: Optic k is s t a b
 
-data GenericFieldsMethod
+type GenericFieldsMethod :: Type -> Type
+data GenericFieldsMethod s
 
 -- | For deriving 'DotOptics' using @DerivingVia@.
 --
@@ -174,7 +175,7 @@ data GenericFieldsMethod
 newtype GenericFields s = MakeGenericFields s
 
 instance DotOptics (GenericFields s) where
-  type DotOpticsMethod (GenericFields s) = GenericFieldsMethod
+  type DotOpticsMethod (GenericFields s) = GenericFieldsMethod s
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
@@ -182,11 +183,12 @@ instance
     k ~ A_Lens,
     is ~ NoIx
   ) =>
-  HasDotOptic GenericFieldsMethod dotName k is s t a b
+  HasDotOptic (GenericFieldsMethod s) dotName k is s t a b
   where
   dotOptic = gfield @dotName
 
-data GenericAffineFieldsMethod
+type GenericAffineFieldsMethod :: Type -> Type
+data GenericAffineFieldsMethod s
 
 -- | For deriving 'DotOptics' using @DerivingVia@.
 --
@@ -196,7 +198,7 @@ data GenericAffineFieldsMethod
 newtype GenericAffineFields s = MakeGenericAffineFields s
 
 instance DotOptics (GenericAffineFields s) where
-  type DotOpticsMethod (GenericAffineFields s) = GenericAffineFieldsMethod
+  type DotOpticsMethod (GenericAffineFields s) = GenericAffineFieldsMethod s
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
@@ -204,7 +206,7 @@ instance
     k ~ An_AffineTraversal,
     is ~ NoIx
   ) =>
-  HasDotOptic GenericAffineFieldsMethod dotName k is s t a b
+  HasDotOptic (GenericAffineFieldsMethod s) dotName k is s t a b
   where
   dotOptic = gafield @dotName
 
@@ -268,7 +270,8 @@ instance
   where
   dotOpticHelper = gafield @name
 
-data GenericConstructorsAndAffineFieldsMethod
+type GenericConstructorsAndAffineFieldsMethod :: Type -> Type
+data GenericConstructorsAndAffineFieldsMethod s
 
 -- | For deriving 'DotOptics' using @DerivingVia@.
 --
@@ -295,7 +298,7 @@ data GenericConstructorsAndAffineFieldsMethod
 newtype GenericConstructorsAndAffineFields s = MakeGenericConstructorsAndAffineFields s
 
 instance DotOptics (GenericConstructorsAndAffineFields s) where
-  type DotOpticsMethod (GenericConstructorsAndAffineFields s) = GenericConstructorsAndAffineFieldsMethod
+  type DotOpticsMethod (GenericConstructorsAndAffineFields s) = GenericConstructorsAndAffineFieldsMethod s
 
 -- | Produce an optic using the optics' package own generic machinery.
 -- Delegates to GConstructor or GAffineField depending on whether dotName starts with '_'.
@@ -304,7 +307,7 @@ instance
     '(name, dotNameForWhat) ~ nameAnalysis,
     HasConstructorOrAffineFieldOptic nameAnalysis k is s t a b
   ) =>
-  HasDotOptic GenericConstructorsAndAffineFieldsMethod dotName k is s t a b
+  HasDotOptic (GenericConstructorsAndAffineFieldsMethod s) dotName k is s t a b
   where
   dotOptic = dotOpticHelper @(AnalyzeDotName dotName)
 
