@@ -112,14 +112,12 @@
 -- for our datatypes, instead of deriving them.
 --
 -- >>> :{
--- data Wee = Wee { vvv :: Int, bbb :: Int } 
+-- data Wee = Wee { vvv :: Int, bbb :: Int }
 --    deriving stock (Show, Generic)
 --    deriving (DotOptics) via CustomDotOptics Wee
 -- instance HasDotOptic Wee "vvv" A_Lens NoIx Wee Wee Int Int where
 --    dotOptic = lens (.vvv) (\r vvv -> r { vvv })
 -- :}
---
--- 
 module Optics.Dot
   ( the,
     DotOptics (..),
@@ -128,7 +126,7 @@ module Optics.Dot
     GenericAffineFields (..),
     GenericConstructors (..),
     GenericConstructorsAndAffineFields (..),
-    CustomDotOptics (..)
+    CustomDotOptics (..),
   )
 where
 
@@ -146,7 +144,7 @@ instance
   ) =>
   HasField dotName (Optic k is s t u v) (Optic m ks s t a b)
   where
-  -- | Compare with the signature of '(%)'.
+  -- \| Compare with the signature of '(%)'.
   getField o = o % (dotOptic @method @dotName @l @js @u @v @a @b)
 
 -- | Helper typeclass, used to specify the method for deriving dot optics.
@@ -161,8 +159,7 @@ class DotOptics s where
 type HasDotOptic :: Type -> Symbol -> OpticKind -> IxList -> Type -> Type -> Type -> Type -> Constraint
 class
   HasDotOptic method dotName k is s t a b
-    | 
-      dotName s -> t a b k is,
+    | dotName s -> t a b k is,
       dotName t -> s a b k is
   where
   dotOptic :: Optic k is s t a b
@@ -191,7 +188,7 @@ instance
 
 data GenericAffineFieldsMethod
 
--- | For deriving 'DotOptics' using @DerivingVia@. 
+-- | For deriving 'DotOptics' using @DerivingVia@.
 --
 -- Supports type-changing updates.
 --
@@ -204,7 +201,7 @@ instance DotOptics (GenericAffineFields s) where
 -- | Produce an optic using the optics' package own generic machinery.
 instance
   ( GAffineField dotName s t a b,
-    k ~ An_AffineTraversal, 
+    k ~ An_AffineTraversal,
     is ~ NoIx
   ) =>
   HasDotOptic GenericAffineFieldsMethod dotName k is s t a b
@@ -225,9 +222,11 @@ instance DotOptics (GenericConstructors s) where
 instance
   ( GConstructor constructorName s t a b,
     -- Dot notation doesn't allow starting with uppercase like constructors do, so we prepend an underscore.
-    dotName ~ ConsSymbol '_' constructorName
+    dotName ~ ConsSymbol '_' constructorName,
+    k ~ A_Prism,
+    is ~ NoIx
   ) =>
-  HasDotOptic GenericConstructorsMethod dotName A_Prism NoIx s t a b
+  HasDotOptic GenericConstructorsMethod dotName k is s t a b
   where
   dotOptic = gconstructor @constructorName
 
@@ -245,25 +244,25 @@ type family AnalyzeDotNameHelper (original :: Symbol) (m :: Maybe (Char, Symbol)
 
 -- | Helper typeclass that dispatches based on whether the name starts with underscore.
 class
-  HasConstructorOrAffineFieldOptic (nameAnalysis :: (Symbol, DotNameForWhat)) (k :: OpticKind) (is :: IxList)  s t a b
+  HasConstructorOrAffineFieldOptic (nameAnalysis :: (Symbol, DotNameForWhat)) (k :: OpticKind) (is :: IxList) s t a b
     | nameAnalysis s -> t a b k is,
       nameAnalysis t -> s a b k is
   where
   dotOpticHelper :: Optic k is s t a b
 
 instance
-  (GConstructor name s t a b,
-  k ~ A_Prism,
-  is ~ NoIx
+  ( GConstructor name s t a b,
+    k ~ A_Prism,
+    is ~ NoIx
   ) =>
   HasConstructorOrAffineFieldOptic '(name, ConstructorDotName) k is s t a b
   where
   dotOpticHelper = gconstructor @name
 
 instance
-  (GAffineField name s t a b, 
-  k ~ An_AffineTraversal,
-  is ~ NoIx
+  ( GAffineField name s t a b,
+    k ~ An_AffineTraversal,
+    is ~ NoIx
   ) =>
   HasConstructorOrAffineFieldOptic '(name, FieldDotName) k is s t a b
   where
@@ -317,7 +316,6 @@ instance DotOptics (CustomDotOptics s) where
 -- | Identity 'Iso'. Used as a starting point for dot access. A renamed 'Optics.Core.equality'.
 the :: Iso s t s t
 the = Optics.Core.equality
-
 
 -- $setup
 -- >>> :set -XDerivingVia
