@@ -124,17 +124,17 @@ instance DotOptics (Fields s) where
 
 -- | Produce an optic using the 'HasField'/'SetField' machinery form "GHC.Records".
 instance
-  ( HasField name s a,
-    SetField name s a,
+  ( HasField fieldName s a,
+    SetField fieldName s a,
     s ~ t,
     a ~ b,
-    name ~ dotName
+    fieldName ~ dotName
   ) =>
   -- if you change to @name s s a a@, a compilation error crops up in tests.
-  HasDotOptic FieldsMethod name dotName s t a b
+  HasDotOptic FieldsMethod dotName s t a b
   where
   type DotOpticKind FieldsMethod dotName s = A_Lens
-  dotOptic = Optics.Core.lens (getField @name) (flip (setField @name))
+  dotOptic = Optics.Core.lens (getField @fieldName) (flip (setField @fieldName))
 
 main :: IO ()
 main = do

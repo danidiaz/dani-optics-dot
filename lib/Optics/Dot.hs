@@ -115,7 +115,7 @@
 -- data Wee = Wee { vvv :: Int, bbb :: Int } 
 --    deriving stock (Show, Generic)
 --    deriving (DotOptics) via CustomDotOptics Wee
--- instance HasDotOptic Wee "vvv" "vvv" Wee Wee Int Int where
+-- instance HasDotOptic Wee "vvv" Wee Wee Int Int where
 --    type DotOpticKind Wee "vvv" Wee = A_Lens
 --    dotOptic = lens (.vvv) (\r vvv -> r { vvv })
 -- :}
@@ -140,14 +140,14 @@ import Optics.Core
 instance
   ( DotOptics u,
     method ~ DotOpticsMethod u,
-    HasDotOptic method name dotName u v a b,
+    HasDotOptic method dotName u v a b,
     l ~ DotOpticKind method dotName u,
     JoinKinds k l m,
     AppendIndices is NoIx ks
   ) =>
   HasField dotName (Optic k is s t u v) (Optic m ks s t a b)
   where
-  getField o = o % (dotOptic @(DotOpticsMethod u) @name @dotName @u @v @a @b)
+  getField o = o % (dotOptic @(DotOpticsMethod u) @dotName @u @v @a @b)
 
 -- | Helper typeclass, used to specify the method for deriving dot optics.
 -- Usually derived with @DerivingVia@.
@@ -157,12 +157,10 @@ class DotOptics s where
   type DotOpticsMethod s :: Type
 
 -- | Produce an optic according to the given method.
-type HasDotOptic :: Type -> Symbol -> Symbol -> Type -> Type -> Type -> Type -> Constraint
+type HasDotOptic :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
 class
-  HasDotOptic method name dotName u v a b
-    | -- This fundep seems to be optional.
-      dotName u -> name,
-      dotName u -> v a b,
+  HasDotOptic method dotName u v a b
+    | dotName u -> v a b,
       dotName v -> u a b
   where
   type DotOpticKind method dotName u :: OpticKind
@@ -180,13 +178,12 @@ instance DotOptics (GenericFields s) where
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
-  ( GField name s t a b,
-    name ~ dotName
+  ( GField dotName s t a b
   ) =>
-  HasDotOptic GenericFieldsMethod name dotName s t a b
+  HasDotOptic GenericFieldsMethod dotName s t a b
   where
   type DotOpticKind GenericFieldsMethod dotName s = A_Lens
-  dotOptic = gfield @name
+  dotOptic = gfield @dotName
 
 data GenericAffineFieldsMethod
 
@@ -202,13 +199,12 @@ instance DotOptics (GenericAffineFields s) where
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
-  ( GAffineField name s t a b,
-    name ~ dotName
+  ( GAffineField dotName s t a b
   ) =>
-  HasDotOptic GenericAffineFieldsMethod name dotName s t a b
+  HasDotOptic GenericAffineFieldsMethod dotName s t a b
   where
   type DotOpticKind GenericAffineFieldsMethod dotName s = An_AffineTraversal
-  dotOptic = gafield @name
+  dotOptic = gafield @dotName
 
 data GenericConstructorsMethod
 
@@ -222,14 +218,14 @@ instance DotOptics (GenericConstructors s) where
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
-  ( GConstructor name s t a b,
+  ( GConstructor constructorName s t a b,
     -- Dot notation doesn't allow starting with uppercase like constructors do, so we prepend an underscore.
-    dotName ~ ConsSymbol '_' name
+    dotName ~ ConsSymbol '_' constructorName
   ) =>
-  HasDotOptic GenericConstructorsMethod name dotName s t a b
+  HasDotOptic GenericConstructorsMethod dotName s t a b
   where
   type DotOpticKind GenericConstructorsMethod dotName s = A_Prism
-  dotOptic = gconstructor @name
+  dotOptic = gconstructor @constructorName
 
 type data DotNameForWhat
   = ConstructorDotName
@@ -300,7 +296,7 @@ instance
     '(name, dotNameForWhat) ~ nameAnalysis,
     HasConstructorOrAffineFieldOptic nameAnalysis s t a b
   ) =>
-  HasDotOptic GenericConstructorsAndAffineFieldsMethod name dotName s t a b
+  HasDotOptic GenericConstructorsAndAffineFieldsMethod dotName s t a b
   where
   type
     DotOpticKind GenericConstructorsAndAffineFieldsMethod dotName s =
