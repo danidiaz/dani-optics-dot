@@ -118,7 +118,8 @@ cartaRey = carta & the.valor .~ True
 newtype Fields s = MakeFields s
 
 instance DotOptics (Fields s) where
-  type DotOpticsMethod (Fields s) = Fields s
+  type DotOpticsMethod (Fields s) = Fields
+  deriveDeftlyNotDaftly = id
 
 -- | Produce an optic using the 'HasField'/'SetField' machinery form "GHC.Records".
 instance
