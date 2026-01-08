@@ -115,8 +115,7 @@
 -- data Wee = Wee { vvv :: Int, bbb :: Int } 
 --    deriving stock (Show, Generic)
 --    deriving (DotOptics) via CustomDotOptics Wee
--- instance HasDotOptic Wee "vvv" Wee Wee Int Int where
---    type DotOpticKind Wee "vvv" Wee = A_Lens
+-- instance HasDotOptic Wee "vvv" A_Lens NoIx Wee Wee Int Int where
 --    dotOptic = lens (.vvv) (\r vvv -> r { vvv })
 -- :}
 --
@@ -129,6 +128,7 @@ module Optics.Dot
     GenericAffineFields (..),
     GenericConstructors (..),
     GenericConstructorsAndAffineFields (..),
+    CustomDotOptics (..)
   )
 where
 
@@ -139,38 +139,39 @@ import Optics.Core
 
 instance
   ( DotOptics u,
-    method ~ DotOpticsMethod u,
-    HasDotOptic method dotName u v a b,
-    l ~ DotOpticKind method dotName u,
+    HasDotOptic method dotName l js u v a b,
     JoinKinds k l m,
-    AppendIndices is NoIx ks
+    AppendIndices is js ks
   ) =>
   HasField dotName (Optic k is s t u v) (Optic m ks s t a b)
   where
-  getField o = o % (dotOptic @(DotOpticsMethod u) @dotName @u @v @a @b)
+  -- | Compare with the signature of '(%)'.
+  getField o = o % (dotOptic @method @dotName @l @js @u @v @a @b)
 
 -- | Helper typeclass, used to specify the method for deriving dot optics.
 -- Usually derived with @DerivingVia@.
 --
--- See 'GenericFields', 'GenericAffineFields' and 'GenericConstructors'.
+-- See 'GenericFields', 'GenericAffineFields', 'GenericConstructors',
+-- 'GenericConstructorsAndAffineFields', 'CustomDotOptics'.
 class DotOptics s where
   type DotOpticsMethod s :: Type
 
 -- | Produce an optic according to the given method.
-type HasDotOptic :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
+type HasDotOptic :: Type -> Symbol -> OpticKind -> IxList -> Type -> Type -> Type -> Type -> Constraint
 class
-  HasDotOptic method dotName u v a b
-    | dotName u -> v a b,
-      dotName v -> u a b
+  HasDotOptic method dotName k is s t a b
+    | dotName s -> t a b k is,
+      dotName t -> s a b k is
   where
-  type DotOpticKind method dotName u :: OpticKind
-  dotOptic :: Optic (DotOpticKind method dotName u) NoIx u v a b
+  dotOptic :: Optic k is s t a b
 
 data GenericFieldsMethod
 
--- | For deriving 'DotOptics' using @DerivingVia@. The wrapped type is not used for anything.
+-- | For deriving 'DotOptics' using @DerivingVia@.
 --
 -- Supports type-changing updates.
+--
+-- The wrapped type must have a 'Generic' instance.
 newtype GenericFields s = MakeGenericFields s
 
 instance DotOptics (GenericFields s) where
@@ -178,20 +179,21 @@ instance DotOptics (GenericFields s) where
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
-  ( GField dotName s t a b
+  ( GField dotName s t a b,
+    k ~ A_Lens,
+    is ~ NoIx
   ) =>
-  HasDotOptic GenericFieldsMethod dotName s t a b
+  HasDotOptic GenericFieldsMethod dotName k is s t a b
   where
-  type DotOpticKind GenericFieldsMethod dotName s = A_Lens
   dotOptic = gfield @dotName
 
 data GenericAffineFieldsMethod
 
--- | For deriving 'DotOptics' using @DerivingVia@. The wrapped type is not used for anything.
---
--- This is for named fields that may be missing in some branch.
+-- | For deriving 'DotOptics' using @DerivingVia@. 
 --
 -- Supports type-changing updates.
+--
+-- The wrapped type must have a 'Generic' instance.
 newtype GenericAffineFields s = MakeGenericAffineFields s
 
 instance DotOptics (GenericAffineFields s) where
@@ -199,11 +201,12 @@ instance DotOptics (GenericAffineFields s) where
 
 -- | Produce an optic using the optics' package own generic machinery.
 instance
-  ( GAffineField dotName s t a b
+  ( GAffineField dotName s t a b,
+    k ~ An_AffineTraversal, 
+    is ~ NoIx
   ) =>
-  HasDotOptic GenericAffineFieldsMethod dotName s t a b
+  HasDotOptic GenericAffineFieldsMethod dotName k is s t a b
   where
-  type DotOpticKind GenericAffineFieldsMethod dotName s = An_AffineTraversal
   dotOptic = gafield @dotName
 
 data GenericConstructorsMethod
@@ -222,9 +225,8 @@ instance
     -- Dot notation doesn't allow starting with uppercase like constructors do, so we prepend an underscore.
     dotName ~ ConsSymbol '_' constructorName
   ) =>
-  HasDotOptic GenericConstructorsMethod dotName s t a b
+  HasDotOptic GenericConstructorsMethod dotName A_Prism NoIx s t a b
   where
-  type DotOpticKind GenericConstructorsMethod dotName s = A_Prism
   dotOptic = gconstructor @constructorName
 
 type data DotNameForWhat
@@ -241,34 +243,33 @@ type family AnalyzeDotNameHelper (original :: Symbol) (m :: Maybe (Char, Symbol)
 
 -- | Helper typeclass that dispatches based on whether the name starts with underscore.
 class
-  HasConstructorOrAffineFieldOptic (nameAnalysis :: (Symbol, DotNameForWhat)) s t a b
-    | nameAnalysis s -> t a b,
-      nameAnalysis t -> s a b
+  HasConstructorOrAffineFieldOptic (nameAnalysis :: (Symbol, DotNameForWhat)) (k :: OpticKind) (is :: IxList)  s t a b
+    | nameAnalysis s -> t a b k is,
+      nameAnalysis t -> s a b k is
   where
-  type DotOpticKindHelper nameAnalysis s :: OpticKind
-  dotOpticHelper :: Optic (DotOpticKindHelper nameAnalysis s) NoIx s t a b
+  dotOpticHelper :: Optic k is s t a b
 
 instance
   (GConstructor name s t a b) =>
-  HasConstructorOrAffineFieldOptic '(name, ConstructorDotName) s t a b
+  HasConstructorOrAffineFieldOptic '(name, ConstructorDotName) A_Prism NoIx s t a b
   where
-  type DotOpticKindHelper '(name, ConstructorDotName) s = A_Prism
   dotOpticHelper = gconstructor @name
 
 instance
   (GAffineField name s t a b) =>
-  HasConstructorOrAffineFieldOptic '(name, FieldDotName) s t a b
+  HasConstructorOrAffineFieldOptic '(name, FieldDotName) An_AffineTraversal NoIx s t a b
   where
-  type DotOpticKindHelper '(name, FieldDotName) s = An_AffineTraversal
   dotOpticHelper = gafield @name
 
 data GenericConstructorsAndAffineFieldsMethod
 
--- | For deriving 'DotOptics' using @DerivingVia@. The wrapped type is not used for anything.
+-- | For deriving 'DotOptics' using @DerivingVia@.
 --
 -- This combines constructors (names starting with '_') and affine fields (other names).
 --
 -- Supports type-changing updates.
+--
+-- The wrapped type must have a 'Generic' instance.
 --
 -- >>> :{
 -- data Branchy =
@@ -294,13 +295,10 @@ instance DotOptics (GenericConstructorsAndAffineFields s) where
 instance
   ( nameAnalysis ~ AnalyzeDotName dotName,
     '(name, dotNameForWhat) ~ nameAnalysis,
-    HasConstructorOrAffineFieldOptic nameAnalysis s t a b
+    HasConstructorOrAffineFieldOptic nameAnalysis k is s t a b
   ) =>
-  HasDotOptic GenericConstructorsAndAffineFieldsMethod dotName s t a b
+  HasDotOptic GenericConstructorsAndAffineFieldsMethod dotName k is s t a b
   where
-  type
-    DotOpticKind GenericConstructorsAndAffineFieldsMethod dotName s =
-      DotOpticKindHelper (AnalyzeDotName dotName) s
   dotOptic = dotOpticHelper @(AnalyzeDotName dotName)
 
 newtype CustomDotOptics s = MakeCustomDotOptics s
