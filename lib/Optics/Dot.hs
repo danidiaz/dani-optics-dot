@@ -259,8 +259,8 @@ type data DotNameForWhat
   | FieldDotName
 
 -- | Type family to check if a symbol starts with an underscore.
-type family AnalyzeDotName (s :: Symbol) :: (Symbol, DotNameForWhat) where
-  AnalyzeDotName s = AnalyzeDotNameHelper s (UnconsSymbol s)
+type family AnalyzeDotName (dotName :: Symbol) :: (Symbol, DotNameForWhat) where
+  AnalyzeDotName dotName = AnalyzeDotNameHelper dotName (UnconsSymbol dotName)
 
 type family AnalyzeDotNameHelper (original :: Symbol) (m :: Maybe (Char, Symbol)) :: (Symbol, DotNameForWhat) where
   AnalyzeDotNameHelper original ('Just '( '_', rest)) = '(rest, ConstructorDotName)
